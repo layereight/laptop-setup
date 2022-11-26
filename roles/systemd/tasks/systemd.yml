@@ -1,0 +1,36 @@
+---
+
+  - name: Copy custom systemd service file
+    template:
+      src: "{{ systemd_service_template }}"
+      dest: "/etc/systemd/system/{{ systemd_service }}.service"
+      mode: 0600
+      backup: yes
+    become: yes
+    notify: Restart custom systemd service
+    when: systemd_service_remove == False
+
+  - name: Enable custom systemd service
+    systemd:
+      name: "{{ systemd_service }}.service"
+      daemon_reload: yes
+      state: started
+      enabled: yes
+    become: yes
+    when: systemd_service_remove == False
+
+  - name: Disable custom systemd service
+    systemd:
+      name: "{{ systemd_service }}.service"
+      daemon_reload: yes
+      state: stopped
+      enabled: no
+    become: yes
+    when: systemd_service_remove == True
+
+  - name: Remove custom systemd service file
+    file:
+      path: "/etc/systemd/system/{{ systemd_service }}.service"
+      state: absent
+    become: yes
+    when: systemd_service_remove == True

@@ -1,0 +1,63 @@
+---
+#
+# typical run:
+#
+# ansible-playbook -i inventory laptop-setup.yml
+#
+
+#
+# Play: setup laptop
+#
+- name: "Setup local laptop"
+  gather_facts: false
+  hosts: localhost
+  connection: local
+
+  roles:
+
+    #
+    # disable wakeup when lid is opened (e.g. after hibernation):
+    #
+    # https://bbs.archlinux.org/viewtopic.php?id=193204
+    # https://bbs.archlinux.org/viewtopic.php?id=72779
+    # https://superuser.com/questions/67814/preventing-laptop-wake-up-when-opening-the-lid-on-linux
+    # https://forums.linuxmint.com/viewtopic.php?p=1635939&sid=6208234fece900a18a9f97c4744e67e2#p1635939
+    #
+    - name: systemd
+      systemd_service: "disable-lidopen-wakeup"
+      systemd_service_template: "disable-lidopen-wakeup.j2"
+
+  tasks:
+
+    #
+    # restore screen brightness when AC attached/detached
+    #
+    # https://linuxconfig.org/how-to-handle-acpi-events-on-linux
+    #
+    - name: "AC power ACPI handler"
+      become: yes
+      copy:
+        dest: "/etc/acpi/events/ac_power"
+        content: |
+          event=ac_adapter ACPI0003:00 00000080
+          action=/etc/acpi/ac_power.sh
+      notify: "Restart acpid"
+
+    - name: "AC power ACPI script"
+      become: yes
+      copy:
+        dest: "/etc/acpi/ac_power.sh"
+        mode: 0744
+        content: |
+          #!/bin/sh
+          brightness=$(cat /sys/class/backlight/acpi_video0/brightness)
+          echo "${brightness}" > /sys/class/backlight/acpi_video0/brightness
+      notify: "Restart acpid"
+
+  handlers:
+
+    - name: "Restart acpid"
+      become: yes
+      systemd:
+        name: acpid
+        state: restarted
