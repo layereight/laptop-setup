@@ -78,6 +78,15 @@
           # Path                  Mode UID  GID  Age Argument
           w /sys/power/image_size -    -    -    -   0
 
+    #
+    # set fs.inotify.max_user_watches in /etc/sysctl.conf
+    #
+    - name: "Set fs.inotify.max_user_watches"
+      become: yes
+      ansible.posix.sysctl:
+        name: fs.inotify.max_user_watches
+        value: 1048576
+
   handlers:
 
     - name: "Restart acpid"
