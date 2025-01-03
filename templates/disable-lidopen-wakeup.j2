@@ -1,9 +1,0 @@
-[Unit]
-Description=Deactivate wakeup on lid open
-
-[Service]
-Type=oneshot
-ExecStart=sh -c 'echo " LID" > /proc/acpi/wakeup'
-
-[Install]
-WantedBy=multi-user.target

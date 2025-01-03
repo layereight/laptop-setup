@@ -1,7 +1,0 @@
----
-
-  - name: Restart custom systemd service
-    systemd:
-      name: "{{ systemd_service }}.service"
-      state: restarted
-    become: yes

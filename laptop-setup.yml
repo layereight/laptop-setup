@@ -13,20 +13,6 @@
   hosts: localhost
   connection: local
 
-  roles:
-
-    #
-    # disable wakeup when lid is opened (e.g. after hibernation):
-    #
-    # https://bbs.archlinux.org/viewtopic.php?id=193204
-    # https://bbs.archlinux.org/viewtopic.php?id=72779
-    # https://superuser.com/questions/67814/preventing-laptop-wake-up-when-opening-the-lid-on-linux
-    # https://forums.linuxmint.com/viewtopic.php?p=1635939&sid=6208234fece900a18a9f97c4744e67e2#p1635939
-    #
-    - name: systemd
-      systemd_service: "disable-lidopen-wakeup"
-      systemd_service_template: "disable-lidopen-wakeup.j2"
-
   tasks:
 
     #
@@ -53,6 +39,44 @@
           brightness=$(cat /sys/class/backlight/acpi_video0/brightness)
           echo "${brightness}" > /sys/class/backlight/acpi_video0/brightness
       notify: "Restart acpid"
+
+
+    #
+    # disable wakeup when lid is opened (e.g. after hibernation):
+    #
+    # https://bbs.archlinux.org/viewtopic.php?id=193204
+    # https://bbs.archlinux.org/viewtopic.php?id=72779
+    # https://superuser.com/questions/67814/preventing-laptop-wake-up-when-opening-the-lid-on-linux
+    # https://forums.linuxmint.com/viewtopic.php?p=1635939&sid=6208234fece900a18a9f97c4744e67e2#p1635939
+    #
+    # https://wiki.archlinux.org/title/Systemd#systemd-tmpfiles_-_temporary_files
+    # https://wiki.archlinux.org/title/tmpfiles.d
+    #
+    - name: "Create systemd tmpfiles.d file disable-lidopen-wakeup"
+      become: yes
+      copy:
+        dest: "/etc/tmpfiles.d/disable-lidopen-wakeup.conf"
+        content: |
+          # Path                  Mode UID  GID  Age Argument
+          w /proc/acpi/wakeup     -    -    -    -   LID
+
+
+    #
+    # set hibernation image size
+    #
+    # https://docs.kernel.org/admin-guide/pm/sleep-states.html#basic-sysfs-interfaces-for-system-suspend-and-hibernation
+    # https://bbs.archlinux.org/viewtopic.php?id=195364
+    #
+    # https://wiki.archlinux.org/title/Systemd#systemd-tmpfiles_-_temporary_files
+    # https://wiki.archlinux.org/title/tmpfiles.d
+    #
+    - name: "Create systemd tmpfiles.d file hibernation_image_size"
+      become: yes
+      copy:
+        dest: "/etc/tmpfiles.d/hibernation_image_size.conf"
+        content: |
+          # Path                  Mode UID  GID  Age Argument
+          w /sys/power/image_size -    -    -    -   0
 
   handlers:
 
